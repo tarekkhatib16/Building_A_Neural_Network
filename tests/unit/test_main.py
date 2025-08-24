@@ -83,12 +83,13 @@ class TestMainFunction(unittest.TestCase) :
 
         expected_training_data_path = self.test_base_path / DATA_DIR_NAME / RAW_DATA_DIR_NAME / TRAIN_FILENAME
         expected_test_data_path = self.test_base_path / DATA_DIR_NAME / RAW_DATA_DIR_NAME / TEST_FILENAME
+        model_dir_path = self.test_base_path / MODEL_STORE_DIR
 
         mock_run_pipeline.assert_called_once_with(
             train_file_path=expected_training_data_path,
             test_file_path=expected_test_data_path,
             target_column=TARGET_COLUMN,
-            model_dir_path=MODEL_STORE_DIR,
+            model_dir_path=model_dir_path,
             model_filename=MODEL_FILENAME,
             log_filename=LOG_FILENAME
         )
