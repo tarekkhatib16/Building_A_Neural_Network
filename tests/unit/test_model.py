@@ -85,14 +85,14 @@ class TestNumpyNeuralNetwork(unittest.TestCase) :
         """
 
         self.network = NumpyNeuralNetwork()
-        self.mock_layer1 = MockLayer("layer1")
-        self.mock_layer2 = MockLayer("layer2")
+        self.mock_layer1 = MockLayer(28*28,5,mock_sigmoid) # simulating MNIST 
+        self.mock_layer2 = MockLayer(5,10,mock_sigmoid)
         
         # Sample training data
         np.random.seed(42)
-        self.X_train = [np.random.rand(10) for _ in range(5)]
-        self.y_train = [np.random.rand(3) for _ in range(5)]
-        self.X_test = [np.random.rand(10) for _ in range(3)]
+        self.X_train = np.random.rand(10, 1, 784).astype('float32')
+        self.y_train = np.random.rand(10, 10).astype('float32')
+        self.X_test = [np.random.rand(2, 1, 784) for _ in range(3)]
         
         # Create temporary directory for file operations
         self.temp_dir = tempfile.mkdtemp()
@@ -152,6 +152,7 @@ class TestNumpyNeuralNetwork(unittest.TestCase) :
 
         # Set up the network
         self.network.add(self.mock_layer1)
+        self.network.add(self.mock_layer2)
         self.network.setLossFunction(mock_meanSquareError)
         
         # Fit the model

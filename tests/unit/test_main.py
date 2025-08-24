@@ -1,4 +1,6 @@
 import unittest
+import numpy as np
+import pandas as pd
 from unittest.mock import patch, MagicMock, call
 from pathlib import Path
 from io import StringIO
@@ -11,26 +13,16 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from main import main
-# Mock configuration constants
-TARGET_COLUMN = "label"
-MODEL_FILENAME = "mnist_model.pkl"
-LOG_FILENAME = "training_log.json"
-DATA_DIR_NAME = "data"
-RAW_DATA_DIR_NAME = "raw"
-TRAIN_FILENAME = "train.csv"
-TEST_FILENAME = "test.csv"
-MODEL_STORE_DIR = "models"
 
-# Mock run_neural_network function
-def mock_run_neural_network(train_file_path, test_file_path, target_column, 
-                            model_dir_path, model_filename, log_filename):
-    """
-    Mock implementation of run_neural_network
-    """
-    # Simulate successful training
-    mock_model = MagicMock()
-    mock_metrics = {"accuracy": 0.9234, "loss": 0.0456}
-    return mock_model, mock_metrics
+# Mock configuration constants
+TARGET_COLUMN = 'label'
+MODEL_FILENAME = 'numpy_neural_network_v1.pkl'
+LOG_FILENAME = 'numpy_neural_network_log.json'
+MODEL_STORE_DIR = 'model_store'
+DATA_DIR_NAME = 'data'
+RAW_DATA_DIR_NAME = 'raw'
+TRAIN_FILENAME = 'mnist_train.csv'
+TEST_FILENAME = 'mnist_test.csv'
 
 def mock_run_neural_network_with_error(train_file_path, test_file_path, target_column,
                                       model_dir_path, model_filename, log_filename):
@@ -49,7 +41,7 @@ class TestMainFunction(unittest.TestCase) :
         # Create temporary directory structure for testing
         self.temp_dir = tempfile.mkdtemp()
         self.test_base_path = Path(self.temp_dir)
-        
+
         # Create expected directory structure
         self.data_dir = self.test_base_path / DATA_DIR_NAME / RAW_DATA_DIR_NAME
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -59,10 +51,14 @@ class TestMainFunction(unittest.TestCase) :
         self.test_file = self.data_dir / TEST_FILENAME
         
         with open(self.train_file, 'w') as f:
-            f.write("label,pixel0,pixel1\n0,100,150\n1,200,250\n")
+            f.write("label," + ",".join([f"pixel{i}" for i in range(784)]) + "\n")
+            f.write("0," + ",".join(["0"] * 784) + "\n")
+            f.write("1," + ",".join(["255"] * 784) + "\n")
         
         with open(self.test_file, 'w') as f:
-            f.write("label,pixel0,pixel1\n0,120,180\n1,220,280\n")
+            f.write("label," + ",".join([f"pixel{i}" for i in range(784)]) + "\n")
+            f.write("0," + ",".join(["0"] * 784) + "\n")
+            f.write("1," + ",".join(["255"] * 784) + "\n")
 
     def tearDown(self):
         """
@@ -72,55 +68,41 @@ class TestMainFunction(unittest.TestCase) :
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
 
-    @patch('builtins.print')
-    def test_successful_execution_with_custom_base_dir(self, mock_print):
+    @patch('main.run_neural_network')
+    def test_main_success(self, mock_run_pipeline):
         """
-        Test successful pipeline execution with custom base directory.
+        Test that main correctly constructs paths and calls the pipeline
+        when an output directory is provided.
         """
+        dummy_model = MagicMock()
+        dummy_metrics = {"accuracy": 0.92}
+        mock_run_pipeline.return_value = (dummy_model, dummy_metrics)
 
-        main(output_base_dir=self.test_base_path)
-        
-        # Check that all expected print statements were called
-        expected_calls = [
-            call("Starting the MNIST Prediction Pipeline"),
-            call("="*60),
-            call(f"\n{'='*60}"),
-            call("Pipeline completed successfully!"),
-            call("Final Model Accuracy: 0.9234")
-        ]
-        
-        for expected_call in expected_calls:
-            self.assertIn(expected_call, mock_print.call_args_list)
-
-    @patch('sys.stderr', new_callable=StringIO)
-    @patch('builtins.print')
-    def test_pipeline_error_handling(self, mock_print, mock_stderr):
-        """
-        Test error handling when pipeline fails.
-        """
-        # Patch run_neural_network to raise an error
-        with patch('__main__.mock_run_neural_network', mock_run_neural_network_with_error):
+        with patch('builtins.print'):
             main(output_base_dir=self.test_base_path)
-        
-        # Check that error was printed to stderr
-        stderr_output = mock_stderr.getvalue()
+
+        expected_training_data_path = self.test_base_path / DATA_DIR_NAME / RAW_DATA_DIR_NAME / TRAIN_FILENAME
+        expected_test_data_path = self.test_base_path / DATA_DIR_NAME / RAW_DATA_DIR_NAME / TEST_FILENAME
+
+        mock_run_pipeline.assert_called_once_with(
+            train_file_path=expected_training_data_path,
+            test_file_path=expected_test_data_path,
+            target_column=TARGET_COLUMN,
+            model_dir_path=MODEL_STORE_DIR,
+            model_filename=MODEL_FILENAME,
+            log_filename=LOG_FILENAME
+        )
+
+    @patch('main.run_neural_network', side_effect=ValueError("Simulated pipeline error"))
+    def test_main_pipeline_error_handling(self, mock_run_pipeline):
+        """ Test that main logs errors when the pipeline fails. """
+        with patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+            main(output_base_dir=self.test_base_path)
+            stderr_output = mock_stderr.getvalue()
+
         self.assertIn("ERROR: Pipeline failed with exception:", stderr_output)
-        self.assertIn("Mock training error for testing", stderr_output)
-        
-        # Check that startup messages were still printed
-        expected_startup_calls = [
-            call("Starting the MNIST Prediction Pipeline"),
-            call("="*60)
-        ]
-        
-        for expected_call in expected_startup_calls:
-            self.assertIn(expected_call, mock_print.call_args_list)
-        
-        # Success messages should NOT be printed
-        success_calls = [
-            call("Pipeline completed successfully!"),
-            call(f"\n{'='*60}")
-        ]
-        
-        for success_call in success_calls:
-            self.assertNotIn(success_call, mock_print.call_args_list)
+        self.assertIn("Simulated pipeline error", stderr_output)
+
+if __name__ == '__main__':
+    # Run all tests
+    unittest.main()

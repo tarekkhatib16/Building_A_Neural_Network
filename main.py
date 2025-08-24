@@ -30,13 +30,14 @@ def main(output_base_dir = None) -> None :
         
         train_file_path = base_path / DATA_DIR_NAME / RAW_DATA_DIR_NAME / TRAIN_FILENAME
         test_file_path = base_path / DATA_DIR_NAME / RAW_DATA_DIR_NAME / TEST_FILENAME
+        model_dir_path = base_path / MODEL_STORE_DIR
 
         # Run the entire training pipeline 
         trained_model, evaluation_metrics = run_neural_network(
             train_file_path = train_file_path,
             test_file_path = test_file_path,
             target_column = TARGET_COLUMN,
-            model_dir_path = MODEL_STORE_DIR,
+            model_dir_path = model_dir_path,
             model_filename = MODEL_FILENAME,
             log_filename = LOG_FILENAME
         ) 

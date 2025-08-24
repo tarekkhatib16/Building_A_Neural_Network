@@ -27,7 +27,7 @@ def clean_dataset(
     X_test = X_test.reshape(X_test.shape[0], 1, 28*28).astype(np.float32) / 255.0
 
     # One-hot encode labels using numpy.eye
-    num_classes = len(np.unique(y_train))  # should be 10 for MNIST
+    num_classes = 10  # should be 10 for MNIST
     y_train_enc = np.eye(num_classes)[y_train]
     y_test_enc = np.eye(num_classes)[y_test]
 

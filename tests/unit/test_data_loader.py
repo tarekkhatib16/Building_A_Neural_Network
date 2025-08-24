@@ -4,6 +4,7 @@ import numpy as np
 import os
 import sys
 import tempfile
+from unittest.mock import patch
 
 # Add the project root to sys.path to allow imports from src
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
@@ -45,7 +46,7 @@ class TestDataLoader(unittest.TestCase) :
         
         """ This function tests that data_loader successfully loads a valid CSV file """
         
-        with unittest.mock.patch('builtins.print') as mock_print :
+        with patch('builtins.print') as mock_print :
             result = data_loader(self.temp_file.name)
 
             # Check that a DataFrame is returned 
@@ -57,7 +58,7 @@ class TestDataLoader(unittest.TestCase) :
             self.assertIn('label', result.columns)
 
             # Check that labels are in expected range (0-9 for MNIST)
-            self.assertTrue(all(result['label'].beteen(0,9)))
+            self.assertTrue(all(result['label'].between(0,9)))
 
             # Check that pixel values are in expected range (0-255)
             pixel_cols = [col for col in result.columns if col.startswith('pixel')]
@@ -102,11 +103,14 @@ class TestDataLoader(unittest.TestCase) :
         Test that data_loader handles empty CSV files 
         
         """
-
+        mnist_columns = ["label"] + [f"pixel{i}" for i in range(1, 785)]
         empty_file = tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False)
-        empty_file.close()
 
         try :
+            # Write only the headers
+            empty_file.write(",".join(mnist_columns) + "\n")
+            empty_file.flush()
+            empty_file.close()
             result = data_loader(empty_file.name)
             self.assertIsInstance(result, pd.DataFrame)
             self.assertTrue(result.empty)

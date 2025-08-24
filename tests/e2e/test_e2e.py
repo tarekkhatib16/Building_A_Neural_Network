@@ -6,20 +6,22 @@ import os
 import tempfile
 import shutil
 import sys
+import json
 
 # Add project root to sys.path for import resolution
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from main import main
+
 # Mock configuration constants
-TARGET_COLUMN = "label"
-MODEL_FILENAME = "mnist_model.pkl"
-LOG_FILENAME = "training_log.json"
-DATA_DIR_NAME = "data"
-RAW_DATA_DIR_NAME = "raw"
-TRAIN_FILENAME = "train.csv"
-TEST_FILENAME = "test.csv"
-MODEL_STORE_DIR = "models"
+TARGET_COLUMN = 'label'
+MODEL_FILENAME = 'numpy_neural_network_v1.pkl'
+LOG_FILENAME = 'numpy_neural_network_log.json'
+MODEL_STORE_DIR = 'model_store'
+DATA_DIR_NAME = 'data'
+RAW_DATA_DIR_NAME = 'raw'
+TRAIN_FILENAME = 'mnist_train.csv'
+TEST_FILENAME = 'mnist_test.csv'
 
 # Mock run_neural_network function
 def mock_run_neural_network(train_file_path, test_file_path, target_column, 
@@ -45,46 +47,68 @@ class TestMainIntegration(unittest.TestCase) :
         self.temp_dir = tempfile.mkdtemp()
         self.test_base_path = Path(self.temp_dir)
 
-        # Create directory strucutre 
-        data_dir = self.test_base_path / DATA_DIR_NAME / RAW_DATA_DIR_NAME
-        data_dir.mkdir(parents=True, exist_ok=True)
+        # Create expected directory structure
+        self.data_dir = self.test_base_path / DATA_DIR_NAME / RAW_DATA_DIR_NAME
+        self.data_dir.mkdir(parents=True, exist_ok=True)
 
-        # Create MNIST-like CSV files
-        train_data = "label," + ",".join([f"pixel{i}" for i in range(784)]) + "\n"
-        for i in range(10):
-            train_data += f"{i % 10}," + ",".join([str(j % 256) for j in range(784)]) + "\n"
+        # Create dummy CSV files
+        self.train_file = self.data_dir / TRAIN_FILENAME
+        self.test_file = self.data_dir / TEST_FILENAME
         
-        test_data = "label," + ",".join([f"pixel{i}" for i in range(784)]) + "\n"
-        for i in range(5):
-            test_data += f"{i % 10}," + ",".join([str(j % 128) for j in range(784)]) + "\n"
+        with open(self.train_file, 'w') as f:
+            f.write("label," + ",".join([f"pixel{i}" for i in range(784)]) + "\n")
+            f.write("0," + ",".join(["0"] * 784) + "\n")
+            f.write("1," + ",".join(["255"] * 784) + "\n")
         
-        with open(data_dir / TRAIN_FILENAME, 'w') as f:
-            f.write(train_data)
-        
-        with open(data_dir / TEST_FILENAME, 'w') as f:
-            f.write(test_data)
+        with open(self.test_file, 'w') as f:
+            f.write("label," + ",".join([f"pixel{i}" for i in range(784)]) + "\n")
+            f.write("0," + ",".join(["0"] * 784) + "\n")
+            f.write("1," + ",".join(["255"] * 784) + "\n")
 
     def tearDown(self):
         if os.path.exists(self.temp_dir):
             shutil.rmtree(self.temp_dir)
 
     @patch('builtins.print')
-    def test_realistic_file_structure(self, mock_print):
+    def test_main_pipeline_end_to_end(self, mock_print) :
         """
-        Test with realistic MNIST file structure.
+        End-to-end test of the main function with mocked pipeline.
         """
-        with patch('__main__.mock_run_neural_network') as mock_pipeline:
-            mock_pipeline.return_value = (MagicMock(), {"accuracy": 0.9123})
+        print("\n--- Running End-to-End Pipeline Test ---")
+        print(self.test_base_path)
+
+        # Run the pipeline (main) 
+        # Pass the temporary directory as the base output directory
+        main(output_base_dir = self.test_base_path)
+
+        # Expect output file paths
+        model_path = self.test_base_path / MODEL_STORE_DIR / MODEL_FILENAME
+        log_path = self.test_base_path / MODEL_STORE_DIR / LOG_FILENAME
+
+        # Assert files were created
+        self.assertTrue(model_path.exists(), f"Model file not found at {model_path}")
+        self.assertTrue(log_path.exists(), f"Log file not found at {log_path}") 
+        print("Model and log files confirmed to exist")
+
+        # Load and verify log contents
+        with open(log_path, 'r') as f :
+            metrics_log = json.load(f)
             
-            main(output_base_dir=self.test_base_path)
+            # The log file should contain accuracy and loss
+            self.assertIsInstance(metrics_log, list)
+            self.assertGreater(len(metrics_log), 0, "Log file should contain at least one run detail")
             
-            # Verify the function completed without errors
-            mock_pipeline.assert_called_once()
-            
-            # Check that the constructed paths point to existing files
-            call_args = mock_pipeline.call_args.kwargs
-            train_path = call_args['train_file_path']
-            test_path = call_args['test_file_path']
-            
-            self.assertTrue(os.path.exists(train_path))
-            self.assertTrue(os.path.exists(test_path))
+            first_run = metrics_log[0].get('metrics', {})
+            self.assertIsNotNone(first_run, "First run metrics should contain 'metrics' key")
+
+            # Assert specific metrics are present and have reasonable values
+            self.assertIn('accuracy', first_run)
+            self.assertIsInstance(first_run['accuracy'], float)
+            self.assertGreaterEqual(first_run['accuracy'], 0.0)
+            self.assertLessEqual(first_run['accuracy'], 1.0)
+            print("Logged metrics verified (accuracy range).")
+
+        print("--- End-to-End Pipeline Test Completed Successfully ---\n")
+
+if __name__ == '__main__':
+    unittest.main()

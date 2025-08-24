@@ -86,6 +86,7 @@ class NumpyNeuralNetwork :
                 # carry out forward propagation
                 output = X_train[j]
                 for layer in self.layers :
+                    # the output on one layer is the input to the next layer
                     output = layer.forwardPropagation(output)
                 
                 # calculate the loss

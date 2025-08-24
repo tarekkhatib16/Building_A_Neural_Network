@@ -62,7 +62,7 @@ def run_neural_network(
     print("\n4. Making predictions...")
     y_pred = network.predict(X_test)
 
-    print("\n5. Evaluating model")
+    print("\n5. Evaluating model...")
     metrics = compute_metrics(y_test, y_pred)
 
     print("\n6. Saving model and logs...")
