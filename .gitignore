@@ -1,3 +1,2 @@
-/OtherFunctions.py
-Data/mnist_test.csv
-Data/mnist_train.csv
+data/raw/mnist_test.csv
+data/raw/mnist_train.csv

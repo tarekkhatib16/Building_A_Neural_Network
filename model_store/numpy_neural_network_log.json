@@ -1,0 +1,14 @@
+[
+    {
+        "timestamp": "2025-08-24T15:25:50.482770",
+        "model_class": "NumpyNeuralNetwork",
+        "dataset": "MNIST",
+        "parameters": {
+            "learning_rate": 0.1,
+            "epochs": 4
+        },
+        "metrics": {
+            "accuracy": 0.9039
+        }
+    }
+]

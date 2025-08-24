@@ -3,7 +3,7 @@ import numpy as np
 class Layer :
     def __init__(self, input_size, output_size, activation) :
         self.weights = np.random.rand(input_size, output_size) - 0.5
-        self.bias = np.random.rand(1, output_size) - 0.5
+        self.biases = np.random.rand(1, output_size) - 0.5
         self.activation = activation 
 
     # this method will return an output for a given input - uses dot to multiply matrices
@@ -21,5 +21,5 @@ class Layer :
 
         # update parameters
         self.weights -= learning_rate * weights_error
-        self.bias -= learning_rate * output_error
+        self.biases -= learning_rate * output_error
         return input_error

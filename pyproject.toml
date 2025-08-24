@@ -1,0 +1,22 @@
+[project]
+name = "building-a-neural-network"
+version = "0.1.0"
+description = "Building a neural network from scratch to predict the MNIST dataset, and deploying it using FastAPI"
+authors = [
+    {name = "tarekkhatib16",email = "ttaarreekk1605@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy (>=2.3.2,<3.0.0)",
+    "pandas (>=2.3.2,<3.0.0)",
+    "scikit-learn (>=1.7.1,<2.0.0)",
+    "fastapi (>=0.116.1,<0.117.0)",
+    "uvicorn (>=0.35.0,<0.36.0)",
+    "matplotlib (>=3.10.5,<4.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
