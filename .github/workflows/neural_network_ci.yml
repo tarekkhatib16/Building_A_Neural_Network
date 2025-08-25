@@ -2,9 +2,7 @@ name: Numpy Neural Network CI
 
 on: 
     push: 
-        branches: [main]
-    pull_request:
-        branches: [main]
+        branches: [dev]
 
 jobs:
     test:
@@ -47,3 +45,48 @@ jobs:
         -   name: Run E2E Tests
             run: |
                 poetry run python -m unittest discover tests/e2e -p "test_*.py"
+
+
+    create-pr:
+        needs: test
+        runs-on: ubuntu-latest
+        steps:
+        -   name: Checkout Repository
+            uses: actions/checkout@v4
+            with:
+                ref: main
+                fetch-depth: 0  # Fetch all history for all branches and tags
+        
+        -   name: Check if PR already exists
+            id: check-pr
+            run: |
+                if [ -n "$existing_pr" ]; then
+                    echo "pr_exists=true" >> $GITHUB_OUTPUT
+                    echo "pr_number=$existing_pr" >> $GITHUB_OUTPUT
+                    echo "PR #$existing_pr already exists from dev to main"
+                else
+                    echo "pr_exists=false" >> $GITHUB_OUTPUT
+                    echo "No existing PR found from dev to main"
+                fi
+            env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+        -   name: Create PR from dev to main 
+            if: steps.check-pr.outputs.pr_exists == 'false'
+            run: |
+                gh pr create \
+                    --head dev \
+                    --base main \
+                    --title "Merge dev into main" \
+                    --body "Automated PR created after successful tests on dev branch." \
+            env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                
+        -   name: Comment on existing PR
+            if: steps.check-pr.outputs.pr_exists == 'true'
+            run: |
+                gh pr comment ${{ steps.check-pr.outputs.pr_number }} \
+                    --body "All tests have passed on dev branch. Ready for merge to main."
+
+            env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
