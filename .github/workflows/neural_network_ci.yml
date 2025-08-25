@@ -3,8 +3,6 @@ name: Numpy Neural Network CI
 on: 
     push: 
         branches: [dev]
-    pull_request:
-        branches: [dev]
 
 jobs:
     test:
