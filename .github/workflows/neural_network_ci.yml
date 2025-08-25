@@ -53,14 +53,50 @@ jobs:
         steps:
         -   name: Checkout Repository
             uses: actions/checkout@v4
-        
-        -   name: Create or Update PR from dev -> main
-            uses: peter-evans/create-pull-request@v5
             with:
-                token: ${{ secrets.GITHUB_TOKEN }}
-                branch: dev
-                base: main
-                title: "Merge dev into main"
-                body: "Automated PR created after successful tests on dev branch."
-                commit-message: "chore: open PR to merge dev into main"
-                draft: false
+                ref: main
+                fetch-depth: 0  # Fetch all history for all branches and tags
+        
+        -   name: Check if PR already exists
+            id: check-pr
+            run: |
+                if [ -n "$existing_pr" ]; then
+                    echo "pr_exists=true" >> $GITHUB_OUTPUT
+                    echo "pr_number=$existing_pr" >> $GITHUB_OUTPUT
+                    echo "PR #$existing_pr already exists from dev to main"
+                else
+                    echo "pr_exists=false" >> $GITHUB_OUTPUT
+                    echo "No existing PR found from dev to main"
+                fi
+            env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+        -   name: Create PR from dev to main 
+            if: steps.check-pr.outputs.pr_exists == 'false'
+            run: |
+                gh pr create \
+                    --head dev \
+                    --base main \
+                    --title "Merge dev into main" \
+                    --body "Automated PR created after successful tests on dev branch." \
+
+                **Changes:**
+                - All tests passing on dev branch
+                - Ready for merge to main
+                
+                **Test Results:**
+                - Unit tests passed
+                - E2E tests passed" \
+                    --reviewer "" \
+                    --assignee "@me"
+            env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        -   name: Comment on existing PR
+            if: steps.check-pr.outputs.pr_exists == 'true'
+            run: |
+                gh pr comment ${{ steps.check-pr.outputs.pr_number }} \
+                    --body "All tests have passed on dev branch. Ready for merge to main."
+                - Unit tests passed
+                - E2E tests passed"
+            env:
+                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
