@@ -10,5 +10,17 @@
         "metrics": {
             "accuracy": 0.917
         }
+    },
+    {
+        "timestamp": "2025-08-25T11:38:32.640665",
+        "model_class": "NumpyNeuralNetwork",
+        "dataset": "MNIST",
+        "parameters": {
+            "learning_rate": 0.1,
+            "epochs": 4
+        },
+        "metrics": {
+            "accuracy": 0.9044
+        }
     }
 ]

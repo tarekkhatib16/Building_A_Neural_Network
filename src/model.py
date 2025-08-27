@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from src.Layer import Layer
 from src.Functions.Sigmoid import sigmoid
 from src.Functions.Loss import meanSquareError
-from src.Functions.deEnoder import deEncoder
+from src.Functions.deEncoder import deEncoder
 from src.Functions.toList import toList
 
 class NumpyNeuralNetwork :
