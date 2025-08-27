@@ -9,7 +9,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_s
 from src.Layer import Layer
 from src.Functions.Sigmoid import sigmoid
 from src.Functions.Loss import meanSquareError
-from src.Functions.deEnoder import deEncoder
+from src.Functions.deEncoder import deEncoder
 from src.Functions.toList import toList
 
 from src.data_loader import data_loader
